@@ -3,9 +3,7 @@ rem
 rem 간단하게 타임서버와 동기화 설정을 수행합니다.
 rem 오늘은 git을 이용해서 추가했음
 @echo Time-sync v0.1 Copyright 2020 Hong-Hyun
-@echo Current Time
 
-@echo off
 :: BatchGotAdmin 
 :------------------------------------- 
 REM --> Check for permissions 
@@ -31,22 +29,29 @@ if '%errorlevel%' NEQ '0' (
 
 rem w32time 서비스 시작
 net start w32time 
+if net명령어가 실패라면 goto 실패
+
 
 rem 부팅시 자동시작
-sc triggerinfo w32time start /networkon stop /networkoff
-
-rem Enabled 값을 0에서 1로 변경
-reg add "HKLM\SYSTEM\CurrentControlSet\Services\W32TIME\TimeProviders\NtpServer" /v "Enabled" /t "REG_DWORD" /d "1" /f
+sc triggerinfo w32time start/networkon stop/networkoff
+if sc명령어가 실패라면 goto 실패
 
 rem 시간동기화 서버 설정 업데이트
-w32tm /config /manualpeerlist:time.nist.gov,0x8 /syncfromflags:manual /update
-
-rem w32tm 서비스 설정 값 확인
-w32tm /dumpreg /subkey:Parameters
+w32tm /config /manualpeerlist:time.nist.gov /syncfromflags:manual /update
+if sc명령어가 실패라면 goto 실패
 
 rem 시간동기화 실시
 w32tm /resync
-pause
+if sc명령어가 실패라면 goto 실패
+
+aaa = w32tm /query /status | findstr 정밀도
+
+echo 시간동기화 성공적으로 완료되었습니다(오차; %aaa%)
+exit; pa
 
 
+실패:
+echo 시간동기화 실패되었습니다. 
+
+rem pause
 
