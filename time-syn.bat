@@ -1,7 +1,6 @@
 @echo off
-rem
-rem ê°„ë‹¨í•˜ê²Œ íƒ€ì„ì„œë²„ì™€ ë™ê¸°í™” ì„¤ì •ì„ ìˆ˜í–‰í•©ë‹ˆë‹¤.
-rem ì˜¤ëŠ˜ì€ gitì„ ì´ìš©í•´ì„œ ì¶”ê°€í–ˆìŒ
+rem °£´ÜÇÏ°Ô Å¸ÀÓ¼­¹ö¿Í µ¿±âÈ­ ¼³Á¤À» ¼öÇàÇÕ´Ï´Ù.
+rem ¿À´ÃÀº gitÀ» ÀÌ¿ëÇØ¼­ Ãß°¡ÇßÀ½
 @echo Time-sync v0.1 Copyright 2020 Hong-Hyun
 
 :: BatchGotAdmin 
@@ -27,31 +26,46 @@ if '%errorlevel%' NEQ '0' (
 	pushd "%CD%" 
 	CD /D "%~dp0"
 
-rem w32time ì„œë¹„ìŠ¤ ì‹œì‘
+if '%errorlevel%' NEQ '0' ( 
+	echo fail reg
+	goto fail
+)
+echo %errorlevel%
+
+rem w32time ¼­ºñ½º ½ÃÀÛ
 net start w32time 
-if netëª…ë ¹ì–´ê°€ ì‹¤íŒ¨ë¼ë©´ goto ì‹¤íŒ¨
 
-
-rem ë¶€íŒ…ì‹œ ìë™ì‹œì‘
+rem ºÎÆÃ½Ã ÀÚµ¿½ÃÀÛ
 sc triggerinfo w32time start/networkon stop/networkoff
-if scëª…ë ¹ì–´ê°€ ì‹¤íŒ¨ë¼ë©´ goto ì‹¤íŒ¨
+if '%errorlevel%' NEQ '0' ( 
+	echo fail2
+	goto fail
+)
 
-rem ì‹œê°„ë™ê¸°í™” ì„œë²„ ì„¤ì • ì—…ë°ì´íŠ¸
-w32tm /config /manualpeerlist:time.nist.gov /syncfromflags:manual /update
-if scëª…ë ¹ì–´ê°€ ì‹¤íŒ¨ë¼ë©´ goto ì‹¤íŒ¨
-
-rem ì‹œê°„ë™ê¸°í™” ì‹¤ì‹œ
+rem ½Ã°£µ¿±âÈ­ ¼­¹ö ¼³Á¤ ¾÷µ¥ÀÌÆ®
+set /p abc=select server :
+w32tm /config /manualpeerlist:%abc% /syncfromflags:manual /update
+if '%errorlevel%' NEQ '0' ( 
+	echo fail3
+	goto fail
+)
+rem ½Ã°£µ¿±âÈ­ ½Ç½Ã
 w32tm /resync
-if scëª…ë ¹ì–´ê°€ ì‹¤íŒ¨ë¼ë©´ goto ì‹¤íŒ¨
 
-aaa = w32tm /query /status | findstr ì •ë°€ë„
+rem ÃÖÁ¾ Á¶°Ç¹® ½ÇÇà
+if '%errorlevel%' NEQ '0' ( 
+	echo fail4
+	goto fail
+) else ( goto success ) 
 
-echo ì‹œê°„ë™ê¸°í™” ì„±ê³µì ìœ¼ë¡œ ì™„ë£Œë˜ì—ˆìŠµë‹ˆë‹¤(ì˜¤ì°¨; %aaa%)
-exit; pa
+:success
 
+echo time sync success
+w32tm /query /status | findstr Á¤¹Ğµµ
+pause
+exit
 
-ì‹¤íŒ¨:
-echo ì‹œê°„ë™ê¸°í™” ì‹¤íŒ¨ë˜ì—ˆìŠµë‹ˆë‹¤. 
-
-rem pause
-
+:fail
+echo time sync fail
+pause
+exit
